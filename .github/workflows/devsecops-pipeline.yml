@@ -36,12 +36,12 @@ jobs:
 
       # SECURITY GATE: vulnerability scan
       - name: Scan image with Trivy
-        uses: aquasecurity/trivy-action@v0
+        uses: aquasecurity/trivy-action@0.28.0
         with:
           image-ref: ${{ env.IMAGE }}
           format: 'table'
           exit-code: '1'
-          severity: 'HIGH,CRITICAL'
+          severity: 'HIGH, CRITICAL'
           ignore-unfixed: true
 
       - name: Push image to Docker Hub
