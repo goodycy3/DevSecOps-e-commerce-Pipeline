@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini E-commerce Store</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for modern typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Custom styles and animations */
+        body {
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        /* Header shadow on scroll */
+        .header-scrolled {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Product card animation */
+        .product-card {
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+
+        .product-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Add to cart button styling */
+        .add-to-cart-btn {
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        .add-to-cart-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .add-to-cart-btn.added {
+            background-color: #22c55e; /* Green-500 */
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <!-- Header Section -->
+    <header id="header" class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 transition-shadow duration-300">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                 <svg class="h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5a.75.75 0 0 1 .75-.75h3a.75.75 0 0 1 .75.75V21m-4.5 0H2.25a.75.75 0 0 1-.75-.75v-7.5a.75.75 0 0 1 .75-.75h3.75a.75.75 0 0 1 .75.75v7.5a.75.75 0 0 1-.75.75Zm4.5 0v-7.5a.75.75 0 0 1 .75-.75h3a.75.75 0 0 1 .75.75V21m-4.5 0h-3.75a.75.75 0 0 1-.75-.75v-7.5a.75.75 0 0 1 .75-.75h3.75a.75.75 0 0 1 .75.75v7.5a.75.75 0 0 1-.75.75Z" />
+                </svg>
+                <h1 class="text-2xl font-bold text-gray-900">Tech Store</h1>
+            </div>
+            <p class="hidden md:block text-gray-600">DevSecOps Project Demo 🛍️</p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-6 py-12">
+        <!-- Hero Section -->
+        <section class="text-center mb-16">
+            <h2 class="text-5xl font-extrabold text-gray-900 leading-tight">Latest in Tech Gadgets</h2>
+            <p class="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">Discover our curated selection of high-quality tech gadgets designed to improve your life.</p>
+        </section>
+
+        <!-- Products Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+            <!-- Product Loop (Flask will render this part) -->
+            {% for product in products %}
+            <div class="product-card bg-white rounded-xl shadow-md overflow-hidden">
+                <div class="h-64 overflow-hidden">
+                    <img src="{{ url_for('static', filename='images/' + product.image) }}" alt="{{ product.name }}" class="w-full h-full object-cover">
+                </div>
+                <div class="p-6">
+                    <h3 class="text-2xl font-bold text-gray-900">{{ product.name }}</h3>
+                    <p class="text-2xl font-semibold text-blue-600 mt-2">${{ product.price }}</p>
+                    <button class="add-to-cart-btn mt-6 w-full bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+                        Add to Cart
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+
+    <!-- Footer Section -->
+    <footer class="bg-gray-800 text-white mt-16">
+        <div class="container mx-auto px-6 py-8 text-center">
+            <p>&copy; 2024 Tech Store. A Mini DevSecOps Project.</p>
+            <p class="text-gray-400 mt-2">Built to demonstrate automated security scanning in a CI/CD pipeline.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Header Shadow on Scroll ---
+            const header = document.getElementById('header');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 10) {
+                    header.classList.add('header-scrolled');
+                } else {
+                    header.classList.remove('header-scrolled');
+                }
+            });
+
+            // --- Add to Cart Button Interaction ---
+            const cartButtons = document.querySelectorAll('.add-to-cart-btn');
+            cartButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    // Prevent multiple clicks while animation is running
+                    if (button.classList.contains('added')) {
+                        return;
+                    }
+
+                    // Add 'added' class for styling
+                    button.classList.add('added');
+                    button.textContent = 'Added!';
+
+                    // Revert back to original state after 2 seconds
+                    setTimeout(() => {
+                        button.classList.remove('added');
+                        button.textContent = 'Add to Cart';
+                    }, 2000);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
