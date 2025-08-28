@@ -2,42 +2,48 @@ name: DevSecOps E-commerce Pipeline
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["develop"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["develop"]
 
 jobs:
   build-scan-push:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    env:
+      IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/mini-devsecops-project:latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v2
+        if: github.event_name == 'push'
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # Step to build the image, so we can scan it before pushing
-      - name: Build Docker image
-        id: build
+      - name: Build Docker image (load to local engine)
         uses: docker/build-push-action@v4
         with:
           context: .
-          load: true # Important: load the image to the runner
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/mini-devsecops-project:latest
-          push: false # We will push only after the scan is successful
+          load: true
+          tags: ${{ env.IMAGE }}
+          push: false
 
-      # === SECURITY GATE ===
-      # Scan the image for vulnerabilities with Trivy
+      # SECURITY GATE: vulnerability scan
       - name: Scan image with Trivy
-        run: |
-          trivy image --format table --exit-code 1 --severity HIGH,CRITICAL --no-progress ${{ secrets.DOCKERHUB_USERNAME }}/mini-devsecops-project:latest
-        # --exit-code 1: If vulnerabilities are found, the command fails.
-        # --severity HIGH,CRITICAL: Only fail for these severities.
+        uses: aquasecurity/trivy-action@v0
+        with:
+          image-ref: ${{ env.IMAGE }}
+          format: 'table'
+          exit-code: '1'
+          severity: 'HIGH,CRITICAL'
+          ignore-unfixed: true
 
-      # This step will only run if the Trivy scan above succeeds
       - name: Push image to Docker Hub
-        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/mini-devsecops-project:latest
+        if: github.event_name == 'push'
+        run: docker push ${{ env.IMAGE }}
