@@ -13,37 +13,39 @@ jobs:
       contents: read
 
     env:
-      IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/mini-devsecops-project:latest
+      LOCAL_IMAGE: mini-devsecops-project:${{ github.sha }}
+      DH_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/mini-devsecops-project:latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Build image (load to local engine)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          load: true
+          tags: ${{ env.LOCAL_IMAGE }}
+          push: false
+
+      - name: Scan with Trivy
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ env.LOCAL_IMAGE }}
+          format: table
+          exit-code: '1'
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
 
       - name: Login to Docker Hub
         if: github.event_name == 'push'
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: ${{ secrets.goodycyb011 }}
+          password: ${{ secrets.dckr_pat_Xv8tXfdIpKoSdWYzxrQZXzzhcWo }}
 
-      - name: Build Docker image (load to local engine)
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          load: true
-          tags: ${{ env.IMAGE }}
-          push: false
-
-      # SECURITY GATE: vulnerability scan
-      - name: Scan image with Trivy
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          image-ref: ${{ env.IMAGE }}
-          format: 'table'
-          exit-code: '1'
-          severity: 'HIGH, CRITICAL'
-          ignore-unfixed: true
-
-      - name: Push image to Docker Hub
+      - name: Tag and push
         if: github.event_name == 'push'
-        run: docker push ${{ env.IMAGE }}
+        run: |
+          docker tag ${{ env.LOCAL_IMAGE }} ${{ env.DH_IMAGE }}
+          docker push ${{ env.DH_IMAGE }}
