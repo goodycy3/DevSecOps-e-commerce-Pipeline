@@ -40,7 +40,7 @@ jobs:
       - name: Check Docker Hub secrets
         if: github.event_name == 'push'
         run: |
-          test -n "${{ secrets.DOCKERHUB_USERNAME }}" || { echo "Missing DOCKERHUB_USERNAME"; exit 1; }
+          test -n "${{ vars.DOCKERHUB_USERNAME }}" || { echo "Missing DOCKERHUB_USERNAME"; exit 1; }
           test -n "${{ secrets.DOCKERHUB_TOKEN }}" || { echo "Missing DOCKERHUB_TOKEN"; exit 1; }
 
       - name: Login to Docker Hub
@@ -54,6 +54,6 @@ jobs:
       - name: Tag and push
         if: github.event_name == 'push'
         run: |
-          DH_IMAGE="${{ secrets.DOCKERHUB_USERNAME }}/mini-devsecops-project:latest"
+          DH_IMAGE="${{ vars.DOCKERHUB_USERNAME }}/mini-devsecops-project:latest"
           docker tag "${{ env.LOCAL_IMAGE }}" "$DH_IMAGE"
           docker push "$DH_IMAGE"
