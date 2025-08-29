@@ -7,6 +7,60 @@ on:
     branches: ["develop"]
 
 jobs:
+  semgrep-sast:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write   # needed to upload SARIF
+      actions: read            # lets the action read workflow-run metadata
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Semgrep + jq
+        run: |
+          python -m pip install --upgrade pip
+          pip install semgrep
+          sudo apt-get update -y
+          sudo apt-get install -y jq
+
+      # JSON run for logs/gating
+      - name: Semgrep scan (JSON)
+        id: semgrep_json
+        continue-on-error: true
+        run: |
+          semgrep scan --config p/owasp-top-ten --metrics=off --json > semgrep.json
+          COUNT=$(jq '.results | length' semgrep.json)
+          echo "Semgrep findings: $COUNT"
+          if [ "$COUNT" -gt 0 ]; then
+            jq -r '.results[] | "\(.check_id)\t\(.path):\(.start.line)\t\(.extra.message)"' semgrep.json
+          fi
+
+      # SARIF for GitHub UI — only on push or same-repo PRs (not forks)
+      - name: Semgrep scan (SARIF)
+        if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+        continue-on-error: true
+        run: semgrep scan --config p/owasp-top-ten --metrics=off --sarif > semgrep.sarif
+
+      - name: Upload SARIF
+        if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: semgrep.sarif
+          token: ${{ secrets.GITHUB_TOKEN }}  # default, but explicit is fine
+
+      # Gate after logging details
+      - name: Fail when findings exist
+        run: |
+          COUNT=$(jq '.results | length' semgrep.json)
+          if [ "$COUNT" -gt 0 ]; then
+            echo "::error::Semgrep found $COUNT blocking finding(s)"
+            exit 1
+          fi
+
+
   build-scan-push:
     runs-on: ubuntu-latest
     environment: production
