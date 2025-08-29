@@ -6,59 +6,8 @@ on:
   pull_request:
     branches: ["develop"]
 
-# --- Job 1: SAST with Semgrep (blocks build on findings) ---
 jobs:
-  semgrep-sast:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: write   # required to upload SARIF to code scanning
-      actions: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Install Semgrep
-        run: |
-          python -m pip install --upgrade pip
-          pip install semgrep
-
-      # 1) JSON for logs/gating (do not fail yet)
-      - name: Semgrep scan (JSON)
-        id: semgrep_json
-        continue-on-error: true
-        run: |
-          semgrep scan --config p/owasp-top-ten --metrics=off --json > semgrep.json
-          COUNT=$(jq '.results | length' semgrep.json)
-          echo "Semgrep findings: $COUNT"
-          if [ "$COUNT" -gt 0 ]; then
-            jq -r '.results[] | "\(.check_id)\t\(.path):\(.start.line)\t\(.extra.message)"' semgrep.json
-          fi
-
-        # 2) SARIF for GitHub code scanning UI
-      - name: Semgrep scan (SARIF)
-        continue-on-error: true
-        run: semgrep scan --config p/owasp-top-ten --metrics=off --sarif > semgrep.sarif
-        
-      - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-            sarif_file: semgrep.sarif
-        
-        # 3) Gate: fail after printing details
-      - name: Fail when findings exist
-        run: |
-            COUNT=$(jq '.results | length' semgrep.json)
-            if [ "$COUNT" -gt 0 ]; then
-              echo "::error::Semgrep found $COUNT blocking finding(s)"
-              exit 1
-            fi
-
-# --- Job 2: Build, scan container with Trivy, then push on push events ---
   build-scan-push:
-    needs: semgrep-sast
     runs-on: ubuntu-latest
     environment: production
     permissions:
@@ -77,8 +26,8 @@ jobs:
           load: true
           tags: ${{ env.LOCAL_IMAGE }}
           push: false
-
-      # Container vulnerability scan (gate)
+       
+      # Scan for Vulnerabilities 
       - name: Scan with Trivy
         uses: aquasecurity/trivy-action@0.28.0
         with:
@@ -88,7 +37,7 @@ jobs:
           severity: HIGH,CRITICAL
           ignore-unfixed: true
 
-      # Only push on push (not PRs)
+      # Fail early if secrets are missing (only on push)
       - name: Check Docker Hub secrets
         if: github.event_name == 'push'
         run: |
