@@ -24,13 +24,38 @@ jobs:
           python -m pip install --upgrade pip
           pip install semgrep
 
-      - name: Run Semgrep (OWASP Top 10 rules)
-        run: semgrep --config p/owasp-top-ten --error --sarif -o semgrep.sarif
+      # 1 Run Semgrep and capture full JSON & SARIF, but don't stop the job yet
+      - name: Semgrep scan (OWASP Top 10)
+        id: semgrep
+        continue-on-error: true
+        run: |
+          semgrep --config p/owasp-top-ten --metrics=off \
+                  --json -o semgrep.json \
+                  --sarif -o semgrep.sarif
 
-      - name: Upload Semgrep SARIF to GitHub
+      # 2 Print a tidy summary to logs (rule id, file, line, message)
+      - name: Summarise findings to logs
+        run: |
+          count=$(jq '.results | length' semgrep.json)
+          echo "Semgrep findings: $count"
+          if [ "$count" -gt 0 ]; then
+            jq -r '.results[] | "\(.check_id)  \(.path):\(.start.line)  \(.extra.message)"' semgrep.json
+          fi
+
+      # 3 Upload SARIF to GitHub code scanning (nice UI on the repo)
+      - name: Upload SARIF
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: semgrep.sarif
+
+      # 4 Gate: fail the job if any findings exist
+      - name: Fail when findings exist
+        run: |
+          count=$(jq '.results | length' semgrep.json)
+          if [ "$count" -gt 0 ]; then
+            echo "::error::Semgrep found $count blocking findings"
+            exit 1
+          fi
 
 # --- Job 2: Build, scan container with Trivy, then push on push events ---
   build-scan-push:

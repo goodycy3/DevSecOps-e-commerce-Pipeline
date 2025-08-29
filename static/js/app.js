@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Theme toggle
+  // Theme toggle (light/dark)
   const html = document.documentElement;
   const toggle = document.getElementById('themeToggle');
   if (toggle) {
@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
       html.classList.toggle('dark');
       localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
     });
+    // restore
     if (localStorage.getItem('theme') === 'dark') html.classList.add('dark');
   }
 
@@ -33,15 +34,35 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Safe query string display (if you want to mirror ?msg= as plain text)
+  // ============================
+  // Intentional vulnerabilities
+  // ============================
+
+  // DOM XSS via innerHTML
   try {
-    const el = document.getElementById('welcome');
-    const msg = new URLSearchParams(location.search).get('msg');
-    if (el && msg) {
-      const div = document.createElement('div');
-      div.className = 'mt-2 text-slate-700';
-      div.textContent = msg; // text only, no HTML
-      el.appendChild(div);
+    const params = new URLSearchParams(location.search);
+    const msg = params.get('msg');
+    if (msg) {
+      const wel = document.getElementById('welcome') || document.body;
+      wel.innerHTML += `<div class="mt-2 text-rose-700">${msg}</div>`; // vulnerable
+    }
+  } catch (_) {}
+
+  // eval on user input
+  try {
+    const code = new URLSearchParams(location.search).get('debug');
+    if (code) {
+      // eslint-disable-next-line no-eval
+      eval(code); // vulnerable
+    }
+  } catch (_) {}
+
+  // open-redirect style + tabnabbing (paired with base.html link)
+  try {
+    const link = document.getElementById('ext-offer-link');
+    if (link) {
+      const dest = new URLSearchParams(location.search).get('next');
+      if (dest) link.href = dest; // vulnerable
     }
   } catch (_) {}
 });

@@ -2,6 +2,7 @@
 {% block title %}Latest in Tech Gadgets{% endblock %}
 
 {% block content %}
+  <!-- Hero -->
   <section class="relative overflow-hidden">
     <div class="grid gap-8 lg:grid-cols-2 items-center">
       <div>
@@ -10,12 +11,18 @@
           <span class="gradient-text">next-gen</span> gear
         </h1>
         <p class="mt-5 text-lg text-slate-600 max-w-2xl">
-          Curated gadgets that look great and work hard.
+          Curated gadgets that look great and work hard. Fast delivery, fair prices, happy vibes.
         </p>
+        <div class="mt-8 flex flex-wrap gap-4">
+          <a href="#products" class="btn-primary shine">Shop the range</a>
+          <a href="#newsletter" class="btn-ghost">Get updates</a>
+        </div>
 
-        {% if welcome_text %}
-          <!-- Auto-escaped by Jinja -->
-          <div id="welcome" class="mt-6 text-blue-700 font-semibold">{{ welcome_text }}</div>
+        <!-- Unsafe reflection demo (for scanners) -->
+        {% if request.args.get('welcome') %}
+          <div id="welcome" class="mt-6 text-blue-700 font-semibold">
+            {{ request.args.get('welcome')|safe }}
+          </div>
         {% endif %}
       </div>
 
@@ -28,6 +35,7 @@
     </div>
   </section>
 
+  <!-- Product grid -->
   <section id="products" class="mt-16">
     <div class="flex items-center justify-between mb-6">
       <h2 class="text-2xl md:text-3xl font-bold">Latest arrivals</h2>
@@ -73,11 +81,12 @@
     </div>
   </section>
 
+  <!-- Newsletter -->
   <section id="newsletter" class="mt-20">
     <div class="cta">
       <div>
         <h3 class="text-2xl md:text-3xl font-extrabold">Stay in the loop</h3>
-        <p class="mt-2 text-slate-600">Fresh drops and flash deals.</p>
+        <p class="mt-2 text-slate-600">Fresh drops, flash deals, and tips—no spam.</p>
       </div>
       <form class="mt-6 flex flex-col sm:flex-row gap-3 w-full max-w-xl">
         <input type="email" required placeholder="you@example.com" class="input" />

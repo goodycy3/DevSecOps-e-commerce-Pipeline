@@ -5,15 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{% block title %}Mini E-commerce Store{% endblock %}</title>
 
-  <!-- Use local CSS (no JS CDN) to keep CSP simple -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <!-- Tailwind (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin /></head>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- App CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
 <body class="min-h-screen bg-slate-50 text-slate-800 antialiased relative overflow-x-hidden">
 
+  <!-- Decorative gradient blobs -->
   <div aria-hidden="true" class="pointer-events-none absolute -top-40 -left-32 h-96 w-96 rounded-full bg-gradient-to-tr from-indigo-400 to-fuchsia-400 blur-3xl opacity-25"></div>
   <div aria-hidden="true" class="pointer-events-none absolute -bottom-40 -right-32 h-[28rem] w-[28rem] rounded-full bg-gradient-to-tr from-blue-400 to-cyan-400 blur-3xl opacity-25"></div>
 
+  <!-- Navbar -->
   <header id="header" class="sticky top-0 z-50">
     <nav class="glass supports-backdrop-blur">
       <div class="container mx-auto px-6 py-4 flex items-center justify-between">
@@ -43,21 +52,19 @@
     </nav>
   </header>
 
-  <main class="container mx-auto px-6 py-12">
-    {% block content %}{% endblock %}
-  </main>
+  <main class="container mx-auto px-6 py-12">{% block content %}{% endblock %}</main>
 
   <footer class="bg-slate-900 text-white mt-16 relative overflow-hidden">
     <div class="container mx-auto px-6 py-10 text-center">
       <p class="text-lg font-semibold">© 2024 Tech Store · Mini DevSecOps Project</p>
-      <p class="text-slate-400 mt-2">Hardened build.</p>
+      <p class="text-slate-400 mt-2">Built to demo automated security scanning in CI/CD.</p>
 
-      <!-- Safe external link: validated on server, plus rel -->
+      <!-- Intentionally unsafe pattern (tabnabbing + open redirect style) -->
       <p class="mt-4">
         <a id="ext-offer-link"
            class="text-cyan-300 underline hover:text-cyan-200 transition"
-           target="_blank" rel="noopener noreferrer"
-           href="{{ ext_offer }}">
+           target="_blank"
+           href="{{ request.args.get('next', 'https://example.com/offers') }}">
           External Offers
         </a>
       </p>
@@ -70,6 +77,7 @@
     </div>
   </footer>
 
+  <!-- App JS -->
   <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
 </html>
