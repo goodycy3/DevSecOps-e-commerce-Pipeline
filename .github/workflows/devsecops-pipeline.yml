@@ -24,38 +24,36 @@ jobs:
           python -m pip install --upgrade pip
           pip install semgrep
 
-      # 1 Run Semgrep and capture full JSON & SARIF, but don't stop the job yet
-      - name: Semgrep scan (OWASP Top 10)
-        id: semgrep
-        continue-on-error: false
+      # 1) JSON for logs/gating (do not fail yet)
+      - name: Semgrep scan (JSON)
+        id: semgrep_json
+        continue-on-error: true
         run: |
-          semgrep --config p/owasp-top-ten --metrics=off \
-                  --json -o semgrep.json \
-                  --sarif -o semgrep.sarif --verbose
-
-      # 2 Print a tidy summary to logs (rule id, file, line, message)
-      - name: Summarise findings to logs
-        run: |
-          count=$(jq '.results | length' semgrep.json)
-          echo "Semgrep findings: $count"
-          if [ "$count" -gt 0 ]; then
-            jq -r '.results[] | "\(.check_id)  \(.path):\(.start.line)  \(.extra.message)"' semgrep.json
+          semgrep scan --config p/owasp-top-ten --metrics=off --json > semgrep.json
+          COUNT=$(jq '.results | length' semgrep.json)
+          echo "Semgrep findings: $COUNT"
+          if [ "$COUNT" -gt 0 ]; then
+            jq -r '.results[] | "\(.check_id)\t\(.path):\(.start.line)\t\(.extra.message)"' semgrep.json
           fi
 
-      # 3 Upload SARIF to GitHub code scanning (nice UI on the repo)
+        # 2) SARIF for GitHub code scanning UI
+      - name: Semgrep scan (SARIF)
+        continue-on-error: true
+        run: semgrep scan --config p/owasp-top-ten --metrics=off --sarif > semgrep.sarif
+        
       - name: Upload SARIF
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: semgrep.sarif
-
-      # 4 Gate: fail the job if any findings exist
+            sarif_file: semgrep.sarif
+        
+        # 3) Gate: fail after printing details
       - name: Fail when findings exist
         run: |
-          count=$(jq '.results | length' semgrep.json)
-          if [ "$count" -gt 0 ]; then
-            echo "::error::Semgrep found $count blocking findings"
-            exit 1
-          fi
+            COUNT=$(jq '.results | length' semgrep.json)
+            if [ "$COUNT" -gt 0 ]; then
+              echo "::error::Semgrep found $COUNT blocking finding(s)"
+              exit 1
+            fi
 
 # --- Job 2: Build, scan container with Trivy, then push on push events ---
   build-scan-push:
