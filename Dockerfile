@@ -1,22 +1,19 @@
-# Use an official Python runtime as a parent image
-FROM python:3.12-slim-buster
+# Use a valid Python 3.12 slim image
+FROM python:3.12-slim-bookworm
 
-# Set the working directory in the container
+# Workdir
 WORKDIR /app
 
-# Copy the dependencies file to the working directory
+# Install Python deps first to leverage layering
 COPY requirements.txt .
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
-# Install any needed packages specified in requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy the project folders to the working directory
+# Copy app files
 COPY templates ./templates
 COPY static ./static
 COPY app.py .
 
-# Make port 5000 available to the world outside this container
+# Expose and run
 EXPOSE 5000
-
-# Run app.py when the container launches
 CMD ["python", "app.py"]
