@@ -9,6 +9,7 @@ on:
 jobs:
   build-scan-push:
     runs-on: ubuntu-latest
+    environment: production
     permissions:
       contents: read
     env:
