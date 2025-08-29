@@ -27,11 +27,11 @@ jobs:
       # 1 Run Semgrep and capture full JSON & SARIF, but don't stop the job yet
       - name: Semgrep scan (OWASP Top 10)
         id: semgrep
-        continue-on-error: true
+        continue-on-error: false
         run: |
           semgrep --config p/owasp-top-ten --metrics=off \
                   --json -o semgrep.json \
-                  --sarif -o semgrep.sarif
+                  --sarif -o semgrep.sarif --verbose
 
       # 2 Print a tidy summary to logs (rule id, file, line, message)
       - name: Summarise findings to logs
