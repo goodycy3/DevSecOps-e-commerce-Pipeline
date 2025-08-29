@@ -14,7 +14,7 @@ jobs:
 
     env:
       LOCAL_IMAGE: mini-devsecops-project:${{ github.sha }}
-      DH_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/mini-devsecops-project:latest
+      DH_IMAGE: ${{ secrets.goodycyb011 }}/mini-devsecops-project:latest
 
     steps:
       - name: Checkout
